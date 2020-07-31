@@ -1,5 +1,7 @@
 import scrapy
+from scrapy.selector import Selector
 from scrapy_selenium import SeleniumRequest
+from selenium.webdriver.common.keys import Keys
 
 
 class ExampleSpider(scrapy.Spider):
@@ -14,7 +16,24 @@ class ExampleSpider(scrapy.Spider):
         )
 
     def parse(self, response):
-        img = response.meta['screenshot']
+        # img = response.meta['screenshot']
 
-        with open('screenshot.png', 'wb') as f:
-            f.write(img)
+        # with open('screenshot.png', 'wb') as f:
+        #     f.write(img)
+        driver = response.meta['driver']
+        search_input = driver.find_element_by_xpath(
+            "//input[@id='search_form_input_homepage']")
+        search_input.send_keys('Hello world')
+
+        # driver.save_screenshot('after_filling_input.png')
+        search_input.send_keys(Keys.ENTER)
+
+        html = driver.page_source
+        response_object = Selector(text=html)
+
+        links = response_object.xpath(
+            "//a[@class='result__url js-result-extras-url']")
+        for link in links:
+            yield {
+                'URL': link.xpath(".//@href").get()
+            }
